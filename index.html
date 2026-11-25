@@ -281,7 +281,9 @@ d3.selectAll('#cnt .btn').on('click',function(){
 /* ---------- Cambio de tamaño de ventana o giro del móvil ---------- */
 var rsT=null;
 function resize(){measure();setForces();if(nodes.length){radii(nodes);sim.alpha(Math.max(sim.alpha(),0.4)).restart();animate();}}
-addEventListener('resize',function(){clearTimeout(rsT);rsT=setTimeout(resize,150);});
+/* se mide el propio lienzo: también cambia cuando la cabecera ocupa más líneas (no solo al redimensionar la ventana) */
+function onResize(){clearTimeout(rsT);rsT=setTimeout(resize,120);}
+if(window.ResizeObserver)new ResizeObserver(onResize).observe(area);else addEventListener('resize',onResize);
 measure();setForces();
 /* ---------- Arranque y refresco ---------- */
 var last90=0;
