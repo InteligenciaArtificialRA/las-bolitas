@@ -1,0 +1,30 @@
+Hazme una página web de UN SOLO ARCHIVO HTML (todo dentro: HTML, CSS y JavaScript) que enseñe las criptomonedas en burbujas, al estilo de Crypto Bubbles. No sé programar: dame el archivo completo, listo para copiar, y dime cómo guardarlo y abrirlo con doble clic en mi ordenador (Windows o Mac).
+
+Lo que quiero:
+
+1. Datos, gratis y sin claves:
+   - La API pública de CoinGecko: https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=150&page=1&price_change_percentage=1h,24h,7d,30d
+   - QUITA las monedas estables y los envoltorios, que no se mueven y solo estorban: USDT, USDC, DAI, USDe, FDUSD, PYUSD, WBTC, WETH, stETH, wstETH, cbBTC y similares, los símbolos que empiecen por "usd" o "eur", las que valgan entre 0,98 y 1,02 $ y casi no se muevan en 24 h, y los fondos tokenizados (precio plano un mes entero). Quédate con las 100 primeras que queden.
+   - Para 90 días, CoinGecko gratis no lo da: usa las velas diarias de Binance (https://api.binance.com/api/v3/klines?symbol=XXXUSDT&interval=1d&limit=91), cierre de hoy frente al de hace 90 días. Pídelas de 8 en 8 para no saturar. Descarta el dato si las velas son viejas (par deslistado) o si el precio de Binance se aleja más de un 15 % del de CoinGecko (es otra moneda con el mismo símbolo). Las que no tengan dato, «sin dato».
+   - Que se actualice sola cada minuto (los 90 días, cada 30 minutos). Si CoinGecko devuelve el error 429 (límite de peticiones), que lo diga en el pie y lo reintente al minuto, sin romperse.
+
+2. Las burbujas (con la librería D3, cargada desde cdnjs):
+   - Una burbuja por moneda, con su logo, su símbolo y el porcentaje.
+   - Verde si sube, roja si baja, gris si no hay dato. El color más intenso cuanto más se mueve (con un tope distinto por plazo: 3 % en 1 h, 10 % en 24 h, 25 % en 7 d, 50 % en 30 d, 80 % en 90 d).
+   - El tamaño según cuánto se mueve (raíz cuadrada del porcentaje), con un mínimo y un máximo para que se lean todas, y que entre todas llenen más o menos la mitad del espacio.
+   - Simulación de fuerzas para que no se pisen y se recoloquen con una animación suave al cambiar de plazo.
+   - Al pasar el ratón o tocar una burbuja, una ficha pequeña con el nombre, el precio y el porcentaje.
+
+3. Controles:
+   - Botones de plazo: 1 H, 24 H (el de inicio), 7 D, 30 D y 90 D.
+   - Botones de cuántas monedas: 50 o 100.
+   - Arriba, un resumen: «X suben · Y bajan en 24 horas».
+
+4. Que se vea bien en todas partes:
+   - Ocupa toda la pantalla, sin barras de desplazamiento, y se adapta al ordenador y al móvil (también al girar el móvil): las burbujas se recalculan con el tamaño de la ventana.
+   - Botones grandes y fáciles de tocar en el móvil.
+   - Fondo oscuro, letra Inter, el naranja que yo quiera para lo destacado.
+   - Números en formato español (coma decimal, punto de miles).
+   - En el pie: «Datos: CoinGecko» con enlace a coingecko.com (lo piden sus condiciones) y la hora de la última actualización.
+
+Dame el archivo completo, sin trozos que falten. Si al abrirlo algo no sale, te digo lo que veo (o te pego el error de la consola del navegador) y lo arreglamos.

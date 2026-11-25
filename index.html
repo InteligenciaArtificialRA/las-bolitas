@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Las bolitas: qué cripto sube y cuál baja, en directo</title>
+<meta name="description" content="Las 100 mayores criptos en burbujas, de 1 hora a 90 días, sin estables ni publicidad. Se actualiza sola cada minuto.">
+<meta name="theme-color" content="#0d1117">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+:root{--bg:#0d1117;--card:#161b22;--line:#2a313b;--txt:#f2f4f7;--mut:#8b949e;--or:#FF6700;--up:#2ee06f;--dn:#ff4d5e;--pad:clamp(12px,2.5vw,36px)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;background:var(--bg)}
+body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--txt);-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;
+ display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;-webkit-tap-highlight-color:transparent}
+header{flex:none;padding:calc(var(--pad)*.7) var(--pad) 6px}
+.row1{display:flex;align-items:baseline;flex-wrap:wrap;column-gap:clamp(12px,2vw,28px);row-gap:4px}
+h1{font-size:clamp(30px,4.4vw,64px);font-weight:900;letter-spacing:-.02em;line-height:1}
+h1 span{color:var(--or)}
+.sum{font-size:clamp(15px,2.1vw,30px);font-weight:700;color:var(--mut)}
+.sum b{font-weight:900}
+.sum .u{color:var(--up)}.sum .d{color:var(--dn)}
+.sum small{font-size:.7em}
+.row2{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-top:clamp(10px,1.4vw,20px)}
+.grp{display:flex;gap:clamp(5px,.7vw,10px);flex-wrap:wrap}
+.btn{font:inherit;font-size:clamp(14px,1.7vw,26px);font-weight:800;letter-spacing:.02em;color:var(--txt);background:var(--card);border:2px solid var(--line);border-radius:12px;
+ padding:clamp(6px,.7vw,10px) clamp(11px,1.6vw,26px);cursor:pointer;touch-action:manipulation;transition:background .2s,border-color .2s,color .2s}
+.btn:hover{border-color:#4a5360}
+.btn.on{background:var(--or);border-color:var(--or);color:#000}
+.grp.n .btn{font-size:clamp(13px,1.4vw,22px);padding:clamp(6px,.7vw,10px) clamp(10px,1.1vw,18px)}
+.grp.n .lab{font-size:clamp(13px,1.3vw,20px);font-weight:700;color:var(--mut);align-self:center;margin-right:2px}
+#area{flex:1;position:relative;min-height:0;margin:0 var(--pad)}
+svg#chart{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;touch-action:manipulation}
+.node{cursor:pointer}
+.node text{font-family:Inter,system-ui,sans-serif;text-anchor:middle;dominant-baseline:central;pointer-events:none;paint-order:stroke;stroke:rgba(0,0,0,.45);stroke-width:3px}
+.node .sym{font-weight:900;fill:#fff}
+.node .pct{font-weight:800;fill:#fff}
+#tip{position:absolute;z-index:5;pointer-events:none;background:rgba(22,27,34,.96);border:1px solid #3a424d;border-radius:12px;padding:10px 14px;font-size:14px;line-height:1.45;
+ box-shadow:0 8px 24px rgba(0,0,0,.45);opacity:0;transition:opacity .15s;white-space:nowrap}
+#tip.show{opacity:1}
+#tip b{font-size:16px}
+#tip .m{color:var(--mut)}
+footer{flex:none;padding:8px var(--pad) calc(10px + env(safe-area-inset-bottom));font-size:clamp(11px,1.1vw,15px);color:var(--mut);display:flex;justify-content:space-between;flex-wrap:wrap;gap:2px 18px}
+footer a{color:var(--mut);text-decoration:underline;text-decoration-color:rgba(139,148,158,.45);text-underline-offset:2px}
+footer a:hover{color:var(--txt)}
+footer .err{color:#e3b341}
+</style>
+</head>
+<body>
+<header>
+ <div class="row1"><h1>Las <span>bolitas</span></h1><div class="sum" id="sum">cargando…</div></div>
+ <div class="row2">
+  <div class="grp" id="per">
+   <button class="btn" data-p="1h">1 H</button>
+   <button class="btn on" data-p="24h">24 H</button>
+   <button class="btn" data-p="7d">7 D</button>
+   <button class="btn" data-p="30d">30 D</button>
+   <button class="btn" data-p="90d">90 D</button>
+  </div>
+  <div class="grp n" id="cnt">
+   <span class="lab">Monedas</span>
+   <button class="btn" data-n="50">50</button>
+   <button class="btn on" data-n="100">100</button>
+  </div>
+ </div>
+</header>
+<div id="area">
+ <svg id="chart"><defs>
+  <radialGradient id="shine" cx="35%" cy="30%" r="75%">
+   <stop offset="0" stop-color="#fff" stop-opacity=".22"/>
+   <stop offset=".55" stop-color="#fff" stop-opacity=".04"/>
+   <stop offset="1" stop-color="#000" stop-opacity=".25"/>
+  </radialGradient>
+ </defs><g id="nodes"></g></svg>
+ <div id="tip"></div>
+</div>
+<footer>
+ <span>Datos: <a href="https://www.coingecko.com" target="_blank" rel="noopener">CoinGecko</a> (90 días: Binance) · se actualiza sola cada minuto · <span id="upd"></span></span>
+ <span>Hecho con IA por el canal de Rodrigo Arnedo · <a href="https://funontheride.com" target="_blank" rel="noopener">funontheride.com</a></span>
+</footer>
+<script>
+(function(){
+'use strict';
+/* ---------- Datos ---------- */
+var CG='https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=150&page=1&price_change_percentage=1h,24h,7d,30d';
+var EXCL=['usdt','usdc','dai','usde','fdusd','tusd','pyusd','usds','usd1','rlusd','susde','busd','wbtc','weth','steth','wsteth','weeth','cbbtc','wbeth','reth','jitosol','bsc-usd',
+ /* fondos tokenizados y estables en euros (no son cripto que se mueva) */
+ 'eurc','usyc','ustb','jaaa','eutbl','eursafo','ousg','buidl','usdy','reusd','figr_heloc'];
+function isStable(c){
+ var s=(c.symbol||'').toLowerCase(),p=c.current_price,d24=c.price_change_percentage_24h_in_currency,
+     d7=c.price_change_percentage_7d_in_currency,d30=c.price_change_percentage_30d_in_currency;
+ if(EXCL.indexOf(s)>=0||s.indexOf('usd')===0||s.indexOf('eur')===0)return true;
+ if(p>=0.98&&p<=1.02&&d24!=null&&Math.abs(d24)<0.5)return true;
+ /* precio plano un mes entero = fondo monetario tokenizado */
+ if(d7!=null&&d30!=null&&Math.abs(d7)<0.5&&Math.abs(d30)<1)return true;
+ return false;
+}
+var coins=[],p90={},lastOk=null,errMsg='';
+function shape(c,i){return{id:c.id,sym:(c.symbol||'').toUpperCase(),name:String(c.name||'').replace(/\s*\(.*?\)\s*/g,' ').trim(),img:c.image,price:c.current_price,rank:i+1,
+ p:{'1h':c.price_change_percentage_1h_in_currency,'24h':c.price_change_percentage_24h_in_currency,
+    '7d':c.price_change_percentage_7d_in_currency,'30d':c.price_change_percentage_30d_in_currency}};}
+function loadMarkets(){
+ return fetch(CG).then(function(r){if(!r.ok)throw new Error(r.status===429?'límite de CoinGecko (429)':'CoinGecko '+r.status);return r.json();})
+ .then(function(d){
+   coins=d.filter(function(c){return !isStable(c);}).slice(0,100).map(shape);
+   lastOk=new Date();errMsg='';update(0.25);
+ }).catch(function(e){errMsg=e.message||'sin conexión';stamp();});
+}
+/* 90 días con velas diarias de Binance: cierre de hoy frente al de hace 90 días */
+function load90(){
+ var list=coins.slice(),i=0;
+ function one(c){
+  if(!/^[A-Z0-9]{2,12}$/.test(c.sym))return Promise.resolve();
+  return fetch('https://api.binance.com/api/v3/klines?symbol='+c.sym+'USDT&interval=1d&limit=91')
+   .then(function(r){return r.ok?r.json():null;})
+   .then(function(k){
+     if(!k||k.length<91||+k[k.length-1][0]<Date.now()-2*864e5){p90[c.id]=null;return;}  /* par deslistado = velas viejas */
+     var a=+k[0][4],b=+k[k.length-1][4];
+     /* control: si el precio de Binance no cuadra con CoinGecko, es otra moneda con el mismo símbolo */
+     if(!a||!b||!c.price||Math.abs(b/c.price-1)>0.15){p90[c.id]=null;return;}
+     p90[c.id]=(b/a-1)*100;
+   }).catch(function(){});
+ }
+ function batch(){
+  if(i>=list.length){update(0.2);return;}
+  var part=list.slice(i,i+8);i+=8;
+  Promise.all(part.map(one)).then(function(){if(period==='90d')update(0.15);setTimeout(batch,300);});
+ }
+ batch();
+}
+
+/* ---------- Formato ---------- */
+function grp(s){return s.replace(/\B(?=(\d{3})+(?!\d))/g,'.');}
+function num(v,d){var s=Math.abs(v).toFixed(d).split('.');return (v<0?'−':'')+grp(s[0])+(s[1]?','+s[1]:'');}
+function fmtPrice(v){if(v==null)return '—';var d=v>=1?2:v>=0.01?4:Math.min(10,Math.max(4,2-Math.floor(Math.log10(v))+2));
+ var s=num(v,d);if(v<0.01)s=s.replace(/0+$/,'').replace(/,$/,',00');return s+' $';}
+function fmtPct(v){if(v==null||isNaN(v))return '—';var a=Math.abs(v),d=a>=100?0:1;
+ var s=a.toFixed(d).replace('.',',');if(a>=1000)s=s.replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+ return (v>0?'+':v<0?'−':'')+s+' %';}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function stamp(){
+ var t=lastOk?lastOk.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}):'';
+ document.getElementById('upd').innerHTML=(lastOk?'actualizado a las '+t:'')+(errMsg?' · <span class="err">'+esc(errMsg)+', reintento en 60 s</span>':'');
+}
+
+/* ---------- Gráfico: se adapta al tamaño de la pantalla ---------- */
+var area=document.getElementById('area');
+var BOX={x0:0,x1:1360,y0:0,y1:846},K=1,PAD=3;
+var CAP={'1h':3,'24h':10,'7d':25,'30d':50,'90d':80};
+var period='24h',howMany=100,nodes=[],byId={};
+var gNodes=d3.select('#nodes');
+var GREEN=d3.interpolateRgb('#1d5e36','#2ee06f'),RED=d3.interpolateRgb('#6e2330','#ff4d5e');
+function val(n){return period==='90d'?p90[n.id]:n.c.p[period];}
+function col(v){if(v==null||isNaN(v)||v===0)return '#59626e';var t=Math.min(1,Math.abs(v)/CAP[period]);t=Math.sqrt(t);return v>0?GREEN(t):RED(t);}
+function measure(){
+ var W=Math.max(200,area.clientWidth),H=Math.max(200,area.clientHeight);
+ BOX={x0:0,x1:W,y0:4,y1:H-4};
+ /* tamaño de referencia: el lienzo original de 1360×846 */
+ K=Math.max(0.3,Math.min(1.7,Math.sqrt(W*H/(1360*846))));
+ PAD=Math.max(1.5,3*K);
+}
+function radii(list){
+ var W=BOX.x1-BOX.x0,H=BOX.y1-BOX.y0,target=0.56*W*H,n=list.length,
+     rmin=(n>60?30:42)*K,rmax=Math.min((n>60?165:200)*K,Math.min(W,H)*0.3),
+     w=list.map(function(d){var v=val(d);return v==null||isNaN(v)?0:Math.sqrt(Math.abs(v))+0.15;});
+ function ar(c){var s=0;for(var i=0;i<n;i++){var r=Math.max(rmin,Math.min(rmax,c*w[i]));s+=Math.PI*r*r;}return s;}
+ var lo=0,hi=2000;for(var k=0;k<40;k++){var m=(lo+hi)/2;if(ar(m)>target)hi=m;else lo=m;}
+ list.forEach(function(d,i){d.rT=Math.max(rmin,Math.min(rmax,lo*w[i]));});
+}
+var collide=d3.forceCollide().radius(function(d){return d.r+PAD;}).strength(0.9).iterations(3);
+var fx=d3.forceX(),fy=d3.forceY();
+var sim=d3.forceSimulation([]).force('x',fx).force('y',fy)
+ .force('c',collide).alphaDecay(0.015).velocityDecay(0.35).on('tick',draw);
+function setForces(){
+ var W=BOX.x1-BOX.x0,H=BOX.y1-BOX.y0;
+ /* en horizontal empuja más en vertical, y al revés en el móvil */
+ fx.x((BOX.x0+BOX.x1)/2).strength(0.04*Math.min(1.5,Math.max(0.4,H/W)));
+ fy.y((BOX.y0+BOX.y1)/2).strength(0.04*Math.min(1.5,Math.max(0.4,W/H)));
+}
+
+function layout(sel){
+ sel.each(function(d){
+  var g=d3.select(this),r=Math.max(1,d.r),L=Math.max(2,d.sym.length),logo=r>=38;
+  var fs=Math.max(9,Math.min(r*0.36,1.75*r/(L*0.66),46)),fp=Math.max(9,Math.min(r*0.27,38));
+  g.select('.halo').attr('r',r+Math.min(5,r*0.12)).attr('stroke-width',Math.max(2,Math.min(8,r*0.13)));
+  g.select('.body').attr('r',r).attr('stroke-width',Math.max(1.5,Math.min(3,r*0.06)));g.select('.shine').attr('r',r);
+  g.select('image').style('display',logo?null:'none').attr('width',r*0.48).attr('height',r*0.48).attr('x',-r*0.24).attr('y',-r*0.66);
+  g.select('.sym').attr('y',logo?r*0.1:-r*0.15).style('font-size',fs+'px').style('stroke-width',r<30?'2px':null).style('display',r<13?'none':null);
+  g.select('.pct').attr('y',logo?r*0.47:r*0.3).style('font-size',fp+'px').style('stroke-width',r<30?'2px':null).style('display',r<17?'none':null);
+ });
+}
+function draw(){
+ nodes.forEach(function(d){
+  d.x=Math.max(BOX.x0+d.r,Math.min(BOX.x1-d.r,d.x));
+  d.y=Math.max(BOX.y0+d.r,Math.min(BOX.y1-d.r,d.y));
+ });
+ gNodes.selectAll('g.node').attr('transform',function(d){return 'translate('+d.x+','+d.y+')';});
+ if(animating)layout(gNodes.selectAll('g.node'));
+}
+var animating=false,animTimer=null;
+function animate(){
+ nodes.forEach(function(d){d.r0=d.r||0;});
+ if(animTimer)animTimer.stop();animating=true;
+ animTimer=d3.timer(function(el){
+  var t=Math.min(1,el/900),e=d3.easeCubicInOut(t);
+  nodes.forEach(function(d){d.r=d.r0+(d.rT-d.r0)*e;});
+  collide.radius(function(d){return d.r+PAD;});
+  if(sim.alpha()<0.05)draw();
+  if(t>=1){animTimer.stop();animating=false;layout(gNodes.selectAll('g.node'));}
+ });
+}
+function update(heat){
+ if(!coins.length)return;
+ var shown=coins.slice(0,howMany),keep={};
+ nodes=shown.map(function(c){
+  var n=byId[c.id];
+  if(!n){n={id:c.id,sym:c.sym,r:0,x:BOX.x0+20+Math.random()*(BOX.x1-BOX.x0-40),y:BOX.y0+20+Math.random()*(BOX.y1-BOX.y0-40)};byId[c.id]=n;}
+  n.c=c;n.sym=c.sym;keep[c.id]=1;return n;
+ });
+ Object.keys(byId).forEach(function(k){if(!keep[k])delete byId[k];});
+ radii(nodes);
+ var sel=gNodes.selectAll('g.node').data(nodes,function(d){return d.id;});
+ sel.exit().transition().duration(400).style('opacity',0).remove();
+ var en=sel.enter().append('g').attr('class','node');
+ en.append('circle').attr('class','halo').attr('fill','none').attr('stroke-opacity',.28);
+ en.append('circle').attr('class','body');
+ en.append('circle').attr('class','shine').attr('fill','url(#shine)');
+ en.append('image').attr('preserveAspectRatio','xMidYMid meet');
+ en.append('text').attr('class','sym');
+ en.append('text').attr('class','pct');
+ en.on('click',function(ev,d){ev.stopPropagation();showTip(d);});
+ var all=en.merge(sel);
+ all.select('image').attr('href',function(d){return d.c.img;});
+ all.select('.sym').text(function(d){return d.sym;});
+ all.select('.pct').text(function(d){return fmtPct(val(d));});
+ all.select('.halo').transition().duration(900).attr('stroke',function(d){return col(val(d));});
+ all.select('.body').transition().duration(900)
+  .attr('stroke',function(d){return col(val(d));})
+  .attr('fill',function(d){return d3.interpolateRgb('#0d1117',col(val(d)))(0.32);});
+ /* resumen */
+ var up=0,dn=0;nodes.forEach(function(d){var v=val(d);if(v>0)up++;else if(v<0)dn++;});
+ var lab={'1h':'en 1 hora','24h':'en 24 horas','7d':'en 7 días','30d':'en 30 días','90d':'en 90 días'}[period];
+ var miss=nodes.length-up-dn;
+ document.getElementById('sum').innerHTML='<b class="u">'+up+'</b> suben · <b class="d">'+dn+'</b> bajan '+lab+
+   (period==='90d'&&miss>0?' <small>('+miss+' sin dato)</small>':'');
+ sim.nodes(nodes);collide.radius(function(d){return d.r+PAD;});
+ sim.alpha(Math.max(sim.alpha(),heat||0.3)).restart();
+ animate();stamp();
+ if(tipNode)showTip(tipNode,true);
+}
+/* ---------- Ficha al pasar el ratón o tocar una bolita ---------- */
+var tip=document.getElementById('tip'),tipNode=null,tipTimer=null;
+function showTip(d,refresh){
+ if(!byId[d.id]){hideTip();return;}
+ tipNode=d;var v=val(d),c=v>0?'var(--up)':v<0?'var(--dn)':'var(--mut)';
+ var lab={'1h':'1 hora','24h':'24 horas','7d':'7 días','30d':'30 días','90d':'90 días'}[period];
+ tip.innerHTML='<b>'+esc(d.c.name)+'</b> <span class="m">'+esc(d.sym)+' · #'+d.c.rank+'</span><br>'+fmtPrice(d.c.price)+
+  ' · <b style="color:'+c+'">'+fmtPct(v)+'</b> <span class="m">en '+lab+'</span>';
+ var W=area.clientWidth,tw=tip.offsetWidth,th=tip.offsetHeight;
+ var x=Math.max(0,Math.min(W-tw,d.x-tw/2)),y=d.y-d.r-th-8;if(y<0)y=Math.min(area.clientHeight-th,d.y+d.r+8);
+ tip.style.left=x+'px';tip.style.top=y+'px';tip.classList.add('show');
+ if(!refresh){clearTimeout(tipTimer);tipTimer=setTimeout(hideTip,5000);}
+}
+function hideTip(){tipNode=null;tip.classList.remove('show');}
+gNodes.on('mouseover',function(ev){var g=ev.target.closest('g.node');if(g&&ev.pointerType!=='touch')showTip(d3.select(g).datum());})
+      .on('mouseout',function(ev){if(!ev.relatedTarget||!ev.relatedTarget.closest||!ev.relatedTarget.closest('g.node'))hideTip();});
+document.addEventListener('click',hideTip);
+/* ---------- Botones ---------- */
+d3.selectAll('#per .btn').on('click',function(){
+ period=this.getAttribute('data-p');
+ d3.selectAll('#per .btn').classed('on',false);d3.select(this).classed('on',true);update(0.5);
+});
+d3.selectAll('#cnt .btn').on('click',function(){
+ howMany=+this.getAttribute('data-n');
+ d3.selectAll('#cnt .btn').classed('on',false);d3.select(this).classed('on',true);update(0.6);
+});
+/* ---------- Cambio de tamaño de ventana o giro del móvil ---------- */
+var rsT=null;
+function resize(){measure();setForces();if(nodes.length){radii(nodes);sim.alpha(Math.max(sim.alpha(),0.4)).restart();animate();}}
+addEventListener('resize',function(){clearTimeout(rsT);rsT=setTimeout(resize,150);});
+measure();setForces();
+/* ---------- Arranque y refresco ---------- */
+var last90=0;
+loadMarkets().then(function(){if(coins.length){load90();last90=Date.now();}});
+setInterval(function(){
+ loadMarkets().then(function(){if(coins.length&&Date.now()-last90>30*60*1000){last90=Date.now();load90();}});
+},60000);
+})();
+</script>
+</body>
+</html>
