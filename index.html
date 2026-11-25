@@ -164,7 +164,8 @@ function measure(){
 }
 function radii(list){
  var W=BOX.x1-BOX.x0,H=BOX.y1-BOX.y0,target=0.56*W*H,n=list.length,
-     rmin=(n>60?30:42)*K,rmax=Math.min((n>60?165:200)*K,Math.min(W,H)*0.3),
+     rmin=Math.max(13,(n>60?30:42)*K),   /* 13 px: lo mínimo para que el símbolo se lea en el móvil */
+     rmax=Math.min((n>60?165:200)*K,Math.min(W,H)*0.3),
      w=list.map(function(d){var v=val(d);return v==null||isNaN(v)?0:Math.sqrt(Math.abs(v))+0.15;});
  function ar(c){var s=0;for(var i=0;i<n;i++){var r=Math.max(rmin,Math.min(rmax,c*w[i]));s+=Math.PI*r*r;}return s;}
  var lo=0,hi=2000;for(var k=0;k<40;k++){var m=(lo+hi)/2;if(ar(m)>target)hi=m;else lo=m;}
