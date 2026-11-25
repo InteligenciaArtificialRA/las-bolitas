@@ -177,8 +177,8 @@ var sim=d3.forceSimulation([]).force('x',fx).force('y',fy)
 function setForces(){
  var W=BOX.x1-BOX.x0,H=BOX.y1-BOX.y0;
  /* en horizontal empuja más en vertical, y al revés en el móvil */
- fx.x((BOX.x0+BOX.x1)/2).strength(0.04*Math.min(1.5,Math.max(0.4,H/W)));
- fy.y((BOX.y0+BOX.y1)/2).strength(0.04*Math.min(1.5,Math.max(0.4,W/H)));
+ fx.x((BOX.x0+BOX.x1)/2).strength(0.04*Math.pow(Math.min(1.5,Math.max(0.3,H/W)),1.5));
+ fy.y((BOX.y0+BOX.y1)/2).strength(0.04*Math.pow(Math.min(1.5,Math.max(0.3,W/H)),1.5));
 }
 
 function layout(sel){
@@ -194,8 +194,9 @@ function layout(sel){
 }
 function draw(){
  nodes.forEach(function(d){
-  d.x=Math.max(BOX.x0+d.r,Math.min(BOX.x1-d.r,d.x));
-  d.y=Math.max(BOX.y0+d.r,Math.min(BOX.y1-d.r,d.y));
+  var m=d.r+Math.min(5,d.r*0.12)+2;   /* radio + halo, para que no se salga del lienzo */
+  d.x=Math.max(BOX.x0+m,Math.min(BOX.x1-m,d.x));
+  d.y=Math.max(BOX.y0+m,Math.min(BOX.y1-m,d.y));
  });
  gNodes.selectAll('g.node').attr('transform',function(d){return 'translate('+d.x+','+d.y+')';});
  if(animating)layout(gNodes.selectAll('g.node'));
